@@ -552,6 +552,48 @@
         color: var(--text-primary);
         transition: color 0.3s ease;
       }
+      .videos-section-title {
+        margin-bottom: 0;
+        color: var(--text-primary);
+        transition: color 0.3s ease;
+      }
+      
+      .videos-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+        gap: 15px;
+      }
+      
+      .category-stats {
+        display: flex;
+        gap: 20px;
+        align-items: center;
+        background: var(--bg-tertiary);
+        padding: 10px 15px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+      }
+      
+      .stat-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 14px;
+      }
+      
+      .stat-label {
+        color: var(--text-secondary);
+        font-weight: 500;
+      }
+      
+      .stat-value {
+        color: var(--accent-primary);
+        font-weight: 600;
+        font-size: 16px;
+      }
       .config-info {
         font-size: 14px;
         color: var(--text-secondary);
@@ -1067,6 +1109,17 @@
           margin-bottom: 20px;
         }
 
+        .videos-header {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 10px;
+        }
+
+        .category-stats {
+          width: 100%;
+          justify-content: space-around;
+        }
+
         .search-filter-section {
           flex-direction: column;
           align-items: stretch;
@@ -1214,9 +1267,21 @@
           </div>
 
           
-          <h2 class="section-title videos-section-title">
-            <i class="fas fa-th-large"></i> Vídeos na Categoria Atual
-          </h2>
+          <div class="videos-header">
+            <h2 class="section-title videos-section-title">
+              <i class="fas fa-th-large"></i> Vídeos na Categoria Atual
+            </h2>
+            <div class="category-stats" id="categoryStats">
+              <div class="stat-item">
+                <span class="stat-label">Total:</span>
+                <span class="stat-value" id="totalVideosCount">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Categoria:</span>
+                <span class="stat-value" id="currentCategoryCount">0</span>
+              </div>
+            </div>
+          </div>
           
           <!-- Barra de Busca e Filtros -->
           <div class="search-filter-section">
@@ -1754,6 +1819,7 @@
         updateCategoryDropdown();
         updateDeleteCategoryDropdown();
         filterVideosByCategory(currentCategory);
+        updateCategoryStats();
 
         // Adicionar event listener para o select de categorias
         document.getElementById("categorySelect").addEventListener("change", function() {
@@ -1862,6 +1928,7 @@
           // updateCategoryList(); // Removido - lista visual não existe mais
           updateCategoryDropdown();
           filterVideosByCategory(currentCategory);
+          updateCategoryStats();
 
           showSyncStatus("Dados carregados com sucesso!", "success");
           setTimeout(() => {
@@ -1899,6 +1966,8 @@
 
         // Atualizar interface
         updateCategoryDropdown();
+        filterVideosByCategory(currentCategory);
+        updateCategoryStats();
         newCategoryInput.value = "";
 
         // Tentar adicionar ao Firebase se estiver disponível
@@ -1958,6 +2027,7 @@
           // updateCategoryList(); // Removido - lista visual não existe mais
           updateCategoryDropdown();
           filterVideosByCategory(currentCategory);
+          updateCategoryStats();
 
           // Tentar excluir do Firebase se estiver disponível
           if (firebaseInitialized) {
@@ -2006,6 +2076,20 @@
       function selectCategory(category) {
         currentCategory = category;
         filterVideosByCategory(category);
+        updateCategoryStats();
+      }
+
+      function updateCategoryStats() {
+        const totalVideosCount = document.getElementById("totalVideosCount");
+        const currentCategoryCount = document.getElementById("currentCategoryCount");
+        
+        // Contar total de vídeos
+        const totalVideos = videos.length;
+        totalVideosCount.textContent = totalVideos;
+        
+        // Contar vídeos na categoria atual
+        const categoryVideos = videos.filter(video => video.category === currentCategory);
+        currentCategoryCount.textContent = categoryVideos.length;
       }
 
       function updateCategoryDropdown() {
@@ -2076,6 +2160,7 @@
 
         // Atualizar interface
         filterVideosByCategory(currentCategory);
+        updateCategoryStats();
 
         // Limpar formulário
         document.getElementById("videoTitle").value = "";
@@ -2318,6 +2403,7 @@
 
           // Atualizar interface imediatamente
           applyFiltersAndSort();
+          updateCategoryStats();
 
           // Esconder menu após exclusão
           const menuElement = document.getElementById(`menu-${videoId}`);
