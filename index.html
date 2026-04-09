@@ -388,7 +388,7 @@
       .modal {
         display: none;
         position: fixed;
-        z-index: 1000;
+        z-index: 99999;
         left: 0;
         top: 0;
         width: 100%;
@@ -408,6 +408,13 @@
         overflow: hidden;
         box-shadow: 0 10px 30px var(--shadow-medium);
         transition: background-color 0.3s ease;
+      }
+      
+      .modal-show {
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        z-index: 99999 !important;
       }
       .modal-header {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1497,6 +1504,7 @@
           ></iframe>
         </div>
       </div>
+    
     </div>
 
     <!-- Modal de Edição de Vídeo -->
@@ -1513,14 +1521,6 @@
               type="text"
               id="editVideoTitle"
               placeholder="Digite o título do vídeo"
-            />
-          </div>
-          <div class="form-group">
-            <label for="editVideoUrl">URL do Vídeo:</label>
-            <input
-              type="url"
-              id="editVideoUrl"
-              placeholder="URL do vídeo"
             />
           </div>
           <div class="form-group">
@@ -1541,6 +1541,40 @@
       </div>
     </div>
 
+    <!-- Modal de Edição de Vídeo -->
+    <div id="editModal" class="modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <span>Editar Vídeo</span>
+          <span class="close" onclick="closeEditModal()">&times;</span>
+        </div>
+        <div class="edit-container">
+          <div class="form-group">
+            <label for="editVideoTitle">Título do Vídeo:</label>
+            <input
+              type="text"
+              id="editVideoTitle"
+              placeholder="Digite o título do vídeo"
+            />
+          </div>
+          <div class="form-group">
+            <label for="editVideoCategory">Categoria:</label>
+            <select id="editVideoCategory">
+              <option value="">Selecione uma categoria...</option>
+            </select>
+          </div>
+          <div class="edit-buttons">
+            <button onclick="closeEditModal()" class="btn-secondary">
+              <i class="fas fa-times"></i> Cancelar
+            </button>
+            <button onclick="saveVideoEdit()" class="btn-success">
+              <i class="fas fa-save"></i> Salvar Alterações
+            </button>
+          </div>
+        </div>
+      </div>
+
+    <body>
     <!-- Menu Contextual -->
     <div id="contextMenu" class="context-menu">
       <div class="context-menu-item" onclick="contextEditVideo()">
@@ -1853,6 +1887,12 @@
 
       // Inicialização
       document.addEventListener("DOMContentLoaded", function () {
+        // Adicionar tratamento de erro global
+        window.addEventListener('error', function(e) {
+          console.error('Erro JavaScript capturado:', e.error);
+          alert('Erro JavaScript: ' + e.error.message);
+        });
+        
         // Carregar tema salvo
         loadTheme();
         
@@ -2868,35 +2908,75 @@
         return text.replace(regex, '<mark>$1</mark>');
       }
 
+      
       // Funções de edição de vídeos
       function editVideo(videoId) {
-        const video = videos.find(v => v.id === videoId);
-        if (!video) return;
-        
-        editingVideoId = videoId;
-        
-        // Preencher formulário com dados atuais
-        document.getElementById("editVideoTitle").value = video.title;
-        document.getElementById("editVideoUrl").value = video.url;
-        
-        // Preencher dropdown de categorias
-        const categorySelect = document.getElementById("editVideoCategory");
-        categorySelect.innerHTML = '<option value="">Selecione uma categoria...</option>';
-        categories.forEach(category => {
-          const option = document.createElement("option");
-          option.value = category;
-          option.textContent = category;
-          if (category === video.category) {
-            option.selected = true;
+        try {
+          console.log("Iniciando edição do vídeo:", videoId);
+          
+          const video = videos.find(v => v.id === videoId);
+          if (!video) {
+            console.error("Vídeo não encontrado:", videoId);
+            alert("Vídeo não encontrado!");
+            return;
           }
-          categorySelect.appendChild(option);
-        });
-        
-        // Esconder menu de opções
-        document.getElementById(`menu-${videoId}`).style.display = "none";
-        
-        // Mostrar modal
-        document.getElementById("editModal").style.display = "block";
+          
+          console.log("Vídeo encontrado:", video);
+          editingVideoId = videoId;
+          
+          // Preencher formulário com dados atuais
+          const titleInput = document.getElementById("editVideoTitle");
+          if (!titleInput) {
+            console.error("Campo editVideoTitle não encontrado");
+            alert("Erro: Campo de título não encontrado!");
+            return;
+          }
+          titleInput.value = video.title;
+          console.log("Título preenchido:", video.title);
+          
+          // Preencher dropdown de categorias
+          const categorySelect = document.getElementById("editVideoCategory");
+          if (!categorySelect) {
+            console.error("Campo editVideoCategory não encontrado");
+            alert("Erro: Campo de categoria não encontrado!");
+            return;
+          }
+          categorySelect.innerHTML = '<option value="">Selecione uma categoria...</option>';
+          categories.forEach(category => {
+            const option = document.createElement("option");
+            option.value = category;
+            option.textContent = category;
+            if (category === video.category) {
+              option.selected = true;
+            }
+            categorySelect.appendChild(option);
+          });
+          console.log("Dropdown de categorias preenchido");
+          
+          // Esconder menu de opções
+          const menuElement = document.getElementById(`menu-${videoId}`);
+          if (menuElement) {
+            menuElement.style.display = "none";
+            console.log("Menu de opções escondido");
+          }
+          
+          // Mostrar modal
+          const modal = document.getElementById("editModal");
+          if (!modal) {
+            console.error("Modal não encontrado no DOM");
+            alert("Erro: Modal de edição não encontrado!");
+            return;
+          }
+          
+          console.log("Tentando mostrar modal...");
+          modal.style.display = "block";
+          console.log("Modal display definido como:", modal.style.display);
+          console.log("Modal deve estar visível agora!");
+          
+        } catch (error) {
+          console.error("Erro na função editVideo:", error);
+          alert("Erro ao abrir edição: " + error.message);
+        }
       }
       
       function closeEditModal() {
@@ -2908,18 +2988,10 @@
         if (!editingVideoId) return;
         
         const title = document.getElementById("editVideoTitle").value.trim();
-        const url = document.getElementById("editVideoUrl").value.trim();
         const category = document.getElementById("editVideoCategory").value;
         
-        if (!title || !url || !category) {
+        if (!title || !category) {
           alert("Por favor, preencha todos os campos.");
-          return;
-        }
-        
-        // Validar URL
-        const videoInfo = getVideoInfo(url);
-        if (!videoInfo.id) {
-          alert("URL inválida ou formato não suportado.");
           return;
         }
         
@@ -2929,48 +3001,37 @@
           videos[videoIndex] = {
             ...videos[videoIndex],
             title,
-            url,
-            videoId: videoInfo.id,
-            thumbnail: videoInfo.thumbnail,
-            category
+            category,
           };
-          
-          // Salvar no localStorage
           localStorage.setItem("videos", JSON.stringify(videos));
-          
-          // Tentar atualizar no Firebase
-          if (firebaseInitialized) {
-            try {
-              await db.collection("videos").doc(editingVideoId).update({
-                title,
-                url,
-                videoId: videoInfo.id,
-                thumbnail: videoInfo.thumbnail,
-                category,
-                updatedAt: firebase.firestore.FieldValue.serverTimestamp()
-              });
-              showSyncStatus("Vídeo atualizado com sucesso!", "success");
-            } catch (error) {
-              console.error("Erro ao atualizar vídeo no Firebase: ", error);
-              showSyncStatus(
-                "Vídeo atualizado localmente. Erro ao sincronizar: " + error.message,
-                "error"
-              );
-            }
-          } else {
-            showSyncStatus("Vídeo atualizado localmente.", "success");
-          }
-          
-          // Fechar modal
-          closeEditModal();
-          
-          // Atualizar interface
-          applyFiltersAndSort();
-          
-          setTimeout(() => {
-            document.getElementById("syncStatus").style.display = "none";
-          }, 3000);
         }
+        
+        // Tentar atualizar no Firebase
+        if (firebaseInitialized) {
+          try {
+            await db.collection("videos").doc(editingVideoId).update({
+              title,
+              category,
+            });
+            console.log("Vídeo atualizado no Firebase com sucesso");
+            showSyncStatus("Vídeo atualizado com sucesso!", "success");
+          } catch (error) {
+            console.error("Erro ao atualizar vídeo no Firebase: ", error);
+            showSyncStatus(
+              "Vídeo atualizado localmente. Erro ao sincronizar: " +
+                error.message,
+              "error"
+            );
+          }
+        } else {
+          showSyncStatus("Vídeo atualizado localmente.", "success");
+        }
+        
+        // Fechar modal
+        closeEditModal();
+        
+        // Atualizar interface
+        applyFiltersAndSort();
       }
       
       function closeVideoModal() {
