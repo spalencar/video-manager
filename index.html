@@ -630,6 +630,45 @@
         gap: 8px;
       }
       
+      .playlist-controls {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+      
+      .playlist-sort {
+        display: flex;
+        gap: 5px;
+      }
+      
+      .sort-btn {
+        background: var(--bg-tertiary);
+        border: 1px solid var(--border-color);
+        color: var(--text-muted);
+        width: 28px;
+        height: 28px;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 12px;
+      }
+      
+      .sort-btn:hover {
+        background: var(--accent-primary);
+        color: white;
+        border-color: var(--accent-primary);
+        transform: scale(1.05);
+      }
+      
+      .sort-btn.active {
+        background: var(--accent-primary);
+        color: white;
+        border-color: var(--accent-primary);
+      }
+      
       .playlist-count {
         font-size: 12px;
         color: var(--text-muted);
@@ -1857,14 +1896,14 @@
             <div class="controls-section">
               <div class="controls-row">
                 <div class="controls-left">
-                  <button class="control-btn" id="playPauseBtn" onclick="togglePlayPause()" title="Play/Pause">
-                    <i class="fas fa-play"></i>
-                  </button>
-                  <button class="control-btn" id="prevBtn" onclick="playPreviousVideo()" title="Vídeo Anterior">
+                  <button class="control-btn" id="playlistStartBtn" onclick="startPlaylist()" title="Início da Playlist">
                     <i class="fas fa-step-backward"></i>
                   </button>
+                  <button class="control-btn" id="prevBtn" onclick="playPreviousVideo()" title="Vídeo Anterior">
+                    <i class="fas fa-backward"></i>
+                  </button>
                   <button class="control-btn" id="nextBtn" onclick="playNextVideo()" title="Próximo Vídeo">
-                    <i class="fas fa-step-forward"></i>
+                    <i class="fas fa-forward"></i>
                   </button>
                   <div class="volume-control">
                     <button class="control-btn" id="volumeBtn" onclick="toggleMute()" title="Mudo">
@@ -1891,7 +1930,17 @@
             <div class="playlist-container" id="playlistContainer">
               <div class="playlist-header">
                 <h3><i class="fas fa-list"></i> Playlist Automática</h3>
-                <span class="playlist-count" id="playlistCount">0 vídeos</span>
+                <div class="playlist-controls">
+                  <span class="playlist-count" id="playlistCount">0 vídeos</span>
+                  <div class="playlist-sort">
+                    <button class="sort-btn" id="sortTitleBtn" onclick="sortPlaylist('title')" title="Ordenar por Título">
+                      <i class="fas fa-sort-alpha-down"></i>
+                    </button>
+                    <button class="sort-btn" id="sortDateBtn" onclick="sortPlaylist('date')" title="Ordenar por Data">
+                      <i class="fas fa-calendar"></i>
+                    </button>
+                  </div>
+                </div>
               </div>
               <div class="playlist-content" id="playlistContent">
                 <!-- Playlist items will be added here -->
@@ -2214,6 +2263,7 @@
       let currentVideoId = null;
       let currentVideoIndex = 0;
       let playlistVideos = [];
+      let playlistSortOrder = 'title'; // 'title' or 'date'
       let isPlaying = false;
       let isAutoplayEnabled = true;
       let isMuted = false;
@@ -3512,6 +3562,30 @@
       function generatePlaylist(category) {
         playlistVideos = videos.filter(v => v.category === category);
         document.getElementById("playlistCount").textContent = `${playlistVideos.length} vídeos`;
+        
+        // Apply default sort (by title)
+        sortPlaylist('title');
+      }
+      
+      function sortPlaylist(sortBy) {
+        // Update active button
+        document.querySelectorAll('.sort-btn').forEach(btn => btn.classList.remove('active'));
+        
+        playlistSortOrder = sortBy;
+        
+        if (sortBy === 'title') {
+          document.getElementById('sortTitleBtn').classList.add('active');
+          playlistVideos.sort((a, b) => a.title.localeCompare(b.title, 'pt-BR', { sensitivity: 'base' }));
+        } else if (sortBy === 'date') {
+          document.getElementById('sortDateBtn').classList.add('active');
+          playlistVideos.sort((a, b) => {
+            // Sort by videoId (assuming newer videos have larger IDs or use date if available)
+            return a.videoId.localeCompare(b.videoId);
+          });
+        }
+        
+        // Update playlist UI with new order
+        updatePlaylistUI();
       }
       
       function updatePlaylistUI() {
@@ -3567,21 +3641,10 @@
         }
       }
       
-      function togglePlayPause() {
-        if (!youtubePlayer) return;
-        
-        const playPauseBtn = document.getElementById("playPauseBtn");
-        const icon = playPauseBtn.querySelector("i");
-        
-        if (isPlaying) {
-          youtubePlayer.pauseVideo();
-          icon.className = "fas fa-play";
-        } else {
-          youtubePlayer.playVideo();
-          icon.className = "fas fa-pause";
+      function startPlaylist() {
+        if (playlistVideos.length > 0) {
+          playVideoFromPlaylist(0);
         }
-        
-        isPlaying = !isPlaying;
       }
       
       function toggleAutoplay() {
@@ -3800,28 +3863,37 @@
       
       function onPlayerReady(event) {
         console.log("YouTube Player Ready");
-        isPlaying = false;
-        document.getElementById("playPauseBtn").querySelector("i").className = "fas fa-play";
         
         // Set volume
         event.target.setVolume(currentVolume);
         
         // Update progress periodically
         setInterval(updateProgress, 1000);
+        
+        // Check initial state after a short delay
+        setTimeout(() => {
+          const playerState = event.target.getPlayerState();
+          if (playerState === YT.PlayerState.PLAYING) {
+            isPlaying = true;
+          } else {
+            isPlaying = false;
+          }
+        }, 500);
       }
       
       function onPlayerStateChange(event) {
-        const playPauseBtn = document.getElementById("playPauseBtn");
-        const icon = playPauseBtn.querySelector("i");
+        console.log("Player state changed:", event.data);
         
         if (event.data === YT.PlayerState.PLAYING) {
           isPlaying = true;
-          icon.className = "fas fa-pause";
         } else if (event.data === YT.PlayerState.PAUSED) {
           isPlaying = false;
-          icon.className = "fas fa-play";
         } else if (event.data === YT.PlayerState.ENDED && isAutoplayEnabled) {
           playNextVideo();
+        } else if (event.data === YT.PlayerState.BUFFERING) {
+          console.log("Video buffering...");
+        } else if (event.data === YT.PlayerState.CUED) {
+          console.log("Video cued and ready to play");
         }
       }
       
