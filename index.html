@@ -1887,12 +1887,6 @@
 
       // Inicialização
       document.addEventListener("DOMContentLoaded", function () {
-        // Adicionar tratamento de erro global
-        window.addEventListener('error', function(e) {
-          console.error('Erro JavaScript capturado:', e.error);
-          alert('Erro JavaScript: ' + e.error.message);
-        });
-        
         // Carregar tema salvo
         loadTheme();
         
