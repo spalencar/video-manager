@@ -569,12 +569,21 @@
       
       .category-stats {
         display: flex;
-        gap: 20px;
-        align-items: center;
+        flex-direction: column;
+        gap: 8px;
         background: var(--bg-tertiary);
-        padding: 10px 15px;
+        padding: 12px 15px;
         border-radius: 8px;
         border: 1px solid var(--border-color);
+        min-width: 280px;
+        max-width: 400px;
+      }
+      
+      .stats-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
       }
       
       .stat-item {
@@ -582,6 +591,7 @@
         align-items: center;
         gap: 5px;
         font-size: 14px;
+        white-space: nowrap;
       }
       
       .stat-label {
@@ -593,6 +603,34 @@
         color: var(--accent-primary);
         font-weight: 600;
         font-size: 16px;
+        min-width: 30px;
+        text-align: right;
+      }
+      
+      .category-name {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 15px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-color);
+        margin-top: 4px;
+      }
+      
+      .category-label {
+        color: var(--text-secondary);
+        font-weight: 500;
+        white-space: nowrap;
+      }
+      
+      .category-value {
+        color: var(--text-primary);
+        font-weight: 600;
+        font-size: 15px;
+        text-align: right;
+        flex: 1;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .config-info {
         font-size: 14px;
@@ -1272,13 +1310,19 @@
               <i class="fas fa-th-large"></i> Vídeos na Categoria Atual
             </h2>
             <div class="category-stats" id="categoryStats">
-              <div class="stat-item">
-                <span class="stat-label">Total:</span>
-                <span class="stat-value" id="totalVideosCount">0</span>
+              <div class="stats-row">
+                <div class="stat-item">
+                  <span class="stat-label">Total:</span>
+                  <span class="stat-value" id="totalVideosCount">0</span>
+                </div>
+                <div class="stat-item">
+                  <span class="stat-label">Categoria:</span>
+                  <span class="stat-value" id="currentCategoryCount">0</span>
+                </div>
               </div>
-              <div class="stat-item">
-                <span class="stat-label">Categoria:</span>
-                <span class="stat-value" id="currentCategoryCount">0</span>
+              <div class="category-name">
+                <span class="category-label">Categoria Atual:</span>
+                <span class="category-value" id="currentCategoryName">Geral</span>
               </div>
             </div>
           </div>
@@ -2001,6 +2045,11 @@
           return;
         }
 
+        if (categoryToDelete === "Geral") {
+          alert("A categoria 'Geral' não pode ser excluída, pois é a categoria padrão do sistema.");
+          return;
+        }
+
         if (
           confirm(
             `Tem certeza que deseja excluir a categoria "${categoryToDelete}"?`
@@ -2082,6 +2131,7 @@
       function updateCategoryStats() {
         const totalVideosCount = document.getElementById("totalVideosCount");
         const currentCategoryCount = document.getElementById("currentCategoryCount");
+        const currentCategoryName = document.getElementById("currentCategoryName");
         
         // Contar total de vídeos
         const totalVideos = videos.length;
@@ -2090,6 +2140,9 @@
         // Contar vídeos na categoria atual
         const categoryVideos = videos.filter(video => video.category === currentCategory);
         currentCategoryCount.textContent = categoryVideos.length;
+        
+        // Atualizar nome da categoria atual
+        currentCategoryName.textContent = currentCategory;
       }
 
       function updateCategoryDropdown() {
@@ -2101,10 +2154,8 @@
         categorySelectInList.innerHTML = '<option value="">Selecione uma categoria...</option>';
         
         categories.forEach((category) => {
-          if (category !== "Geral") {
-            categorySelect.innerHTML += `<option value="${category}">${category}</option>`;
-            categorySelectInList.innerHTML += `<option value="${category}">${category}</option>`;
-          }
+          categorySelect.innerHTML += `<option value="${category}">${category}</option>`;
+          categorySelectInList.innerHTML += `<option value="${category}">${category}</option>`;
         });
       }
 
@@ -2114,13 +2165,10 @@
           '<option value="">Selecione uma categoria...</option>';
 
         categories.forEach((category) => {
-          if (category !== "Geral") {
-            // Não permitir excluir a categoria padrão
-            const option = document.createElement("option");
-            option.value = category;
-            option.textContent = category;
-            dropdown.appendChild(option);
-          }
+          const option = document.createElement("option");
+          option.value = category;
+          option.textContent = category;
+          dropdown.appendChild(option);
         });
       }
 
